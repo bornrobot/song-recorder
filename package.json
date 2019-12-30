@@ -4,7 +4,8 @@
   "main": "app.js",
   "dependencies": {
     "mysql": "2.17.1",
-    "node-record-lpcm16": ""
+    "node-record-lpcm16": "",
+    "redis": ""
   },
   "devDependencies": {},
   "scripts": {
