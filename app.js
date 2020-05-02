@@ -1,78 +1,27 @@
-'use strict'
-const mysql = require('mysql');
-const config = require('./config.js');
-const recorder = require('node-record-lpcm16');
-const fs = require('fs');
-const redis = require('redis');
+//Perform song
+//Input: record song (start / stop) + audio input
+//Outputs: save command, audio data
 
-let recording = null;
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+var cors = require('cors')
 
-var client = redis.createClient(36379, "127.0.0.1");
-const db = mysql.createConnection(config);
+const {getIndex, postStartRecording, postStopRecording} = require('./routes');
+const port = 5001;
 
-client.on('connect', function() {
-    console.log('Redis client connected');
+// configure middleware
+app.set('port', process.env.port || port); // set express to use this port
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json()); // parse form data client
+app.use(cors());
+
+// routes for the app
+app.get('/', getIndex);
+app.post('/startRecording', postStartRecording);
+app.post('/stopRecording', postStopRecording);
+
+// set the app to listen on the port
+app.listen(port, () => {
+    console.log(`Server running on port: ${port}`);
 });
-
-client.on('error', function (err) {
-    console.log('Something went wrong ' + err);
-});
-
-client.on("message", function (channel, message) {
-
-  console.log("Message: " + message + " on channel: " + channel + " is arrive!");
-
-  var msg = JSON.parse(message);
-
-  if(msg.Action === "StartRecording"){
-    startRecording( getWavName(msg.songId) );
-  }
-  if(msg.Action === "StopRecording"){
-    stopRecording(function() {
-      updateDatabase(msg.songId, getWavName(msg.songId));
-    });
-  }
-});
-
-client.subscribe("notification");
-
-
-function getWavName(songId) {
-    return "./assets/wav/" + songId + ".wav";
-}
-
-function stopRecording(callback) {
-    recording.stop();
-    callback();
-}
-
-function startRecording(wavName) {
-  console.log("Start recording to " + wavName);
-
-  const file = fs.createWriteStream(wavName, { encoding: 'binary' });
-
-  recording = recorder.record({
-    sampleRate: 44100,
-    endOnSilence: false
-  });
-
-  recording.stream()
-  .pipe(file);
-}
-
-function updateDatabase(songId, wavName) {
-
-  console.log('Connected to database');
-
-  let query = "UPDATE tblSongs SET wavUrl='" + wavName + "'"; 
-  query += " WHERE songId=" + songId;
-
-  db.query(query, (err, result) => {
-    if (err) {
-      throw err;
-    }
-  });
-}
-
-//db.end();
-
