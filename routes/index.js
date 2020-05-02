@@ -17,8 +17,13 @@ module.exports = {
   },
 
   postStopRecording: (req, res) => {
+
+    let strJson = JSON.stringify(req.body);
+
     console.log("Stop recording...");
-    recorder.stopRecording();
+
+    recorder.stopRecording(strJson);
+
     res.sendStatus(200);
   }
 };

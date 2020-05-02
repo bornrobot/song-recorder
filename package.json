@@ -1,11 +1,13 @@
 {
-  "name": "song-recorder",
+  "name": "br-record",
   "version": "1.0.0",
   "main": "app.js",
   "dependencies": {
-    "mysql": "2.17.1",
-    "node-record-lpcm16": "",
-    "redis": ""
+    "body-parser": "",
+    "chokidar": "",
+    "cors": "",
+    "ejs": "",
+    "express": "",
   },
   "devDependencies": {},
   "scripts": {

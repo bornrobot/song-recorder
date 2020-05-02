@@ -12,6 +12,13 @@ module.exports = {
 function stopRecording() {
   console.log("Stop recording wav");
   recording.stop();
+
+  //convert to mp3
+
+  //trim silence
+
+  //save to library
+  addToLibrary(song,'tmp.wav'); 
 }
 
 function startRecording() {
