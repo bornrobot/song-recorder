@@ -8,6 +8,8 @@
     "cors": "",
     "ejs": "",
     "express": "",
+    "request": "",
+    "node-record-lpcm16": ""
   },
   "devDependencies": {},
   "scripts": {

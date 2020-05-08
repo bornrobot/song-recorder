@@ -11,18 +11,22 @@ module.exports = {
   },
 
   postStartRecording: (req, res) => {
+    let strJson = JSON.stringify(req.body);
+
     res.sendStatus(200);
     console.log("Start recording...");
-    recorder.startRecording();
+
+    recorder.startRecording(strJson);
   },
 
   postStopRecording: (req, res) => {
 
-    let strJson = JSON.stringify(req.body);
-
     console.log("Stop recording...");
 
-    recorder.stopRecording(strJson);
+    console.log(req.body);
+    let uuid = req.body.Uuid;
+
+    recorder.stopRecording(uuid);
 
     res.sendStatus(200);
   }
