@@ -2,8 +2,10 @@ const recorder = require('../record.js');
 
 module.exports = {
   getIndex: (req, res) => {
+
     // TODO: get status...
     console.log("Get index...");
+
     res.json({
       title:"Song recorder",
       status: "BUSY"
@@ -11,20 +13,19 @@ module.exports = {
   },
 
   postStartRecording: (req, res) => {
-    let strJson = JSON.stringify(req.body);
 
     res.sendStatus(200);
     console.log("Start recording...");
-
-    recorder.startRecording(strJson);
+    console.log(req.body);
+    recorder.startRecording(req.body);
   },
 
   postStopRecording: (req, res) => {
 
     console.log("Stop recording...");
-
     console.log(req.body);
-    let uuid = req.body.Uuid;
+
+    let uuid = req.body.uuid;
 
     recorder.stopRecording(uuid);
 

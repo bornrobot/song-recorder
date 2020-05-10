@@ -11,11 +11,31 @@ module.exports = {
   stopRecording
 };
 
+function addToLibrary(song, file) {
+  console.log(`Save to library ${file}`);
+
+  //var url = "https://library.bornrobot.com/add";
+  var url = "http://localhost:5002/add";
+
+  let req = request.post(url, function (err, resp, body) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('URL: ' + body);
+    }
+  });
+
+  var form = req.form();
+  form.append("bandName", "bornrobot");
+  form.append("json", song);
+  form.append('mp3', fs.createReadStream(file));
+}
+
 function stopRecording(uuid) {
-  console.log("Stop recording wav");
+  console.log(`Stop recording ${uuid}`);
   recording.stop();
 
-  //trim silence
+  /*trim silence
   'sox ${uuid}.orig.wav $uuid.wav silence -l 1 0.1 1% -1 2.0 1%'
 
   //convert to mp3
@@ -26,18 +46,20 @@ function stopRecording(uuid) {
   -metadata year="2020" \
   -metadata author="Bornrobot" \
   -codec mp3 ${$uuid}.mp3 </dev/null
+  */
 
-  addToLibrary(song, uuid + '.mp3'); 
+  //addToLibrary(song, uuid + '.mp3'); 
 }
 
 function startRecording(_song) {
 
   song = _song;
-  uuid = song.Uuid;
+  let filename = song.uuid + '.wav';
 
-  console.log("Start recording ${uuid}.wav");
+  console.log(`Start recording ${filename}`);
 
-  const file = fs.createWriteStream(uuid + '.wav', { encoding: 'binary' });
+  const file = fs.createWriteStream( filename, { encoding: 'binary' });
+
   recording = recorder.record({
     sampleRate: 44100,
     channels: 2,
@@ -45,25 +67,5 @@ function startRecording(_song) {
   });
   recording.stream().pipe(file);
 
-  console.log("end of startRecording");
-}
-
-function addToLibrary(song, file) {
-  console.log('Save to library ' + file);
-
-  var url = "https://library.bornrobot.com/add";
-
-  let req = request.post(url, function (err, resp, body) {
-    if (err) {
-      console.log('Error!');
-    } else {
-      console.log('URL: ' + body);
-    }
-  });
-
-  var form = req.form();
-
-  form.append("bandName", "bornrobot");
-  form.append("json", song);
-  form.append('mp3', fs.createReadStream(file));
+  console.log("recording started.");
 }
