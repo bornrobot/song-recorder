@@ -11,11 +11,12 @@ module.exports = {
   stopRecording
 };
 
-function addToLibrary(song, file) {
-  console.log(`Save to library ${file}`);
+function addToLibrary(audioFilename) {
+  console.log(`Save ${audioFilename} to lib`);
 
   //var url = "https://library.bornrobot.com/add";
-  var url = "http://localhost:5002/add";
+  var url = "http://localhost:5000/add";
+
 
   let req = request.post(url, function (err, resp, body) {
     if (err) {
@@ -27,15 +28,16 @@ function addToLibrary(song, file) {
 
   var form = req.form();
   form.append("bandName", "bornrobot");
-  form.append("json", song);
-  form.append('mp3', fs.createReadStream(file));
+  form.append("json", JSON.stringify(song));
+  form.append("mp3", fs.createReadStream(audioFilename));
 }
 
 function stopRecording(uuid) {
   console.log(`Stop recording ${uuid}`);
   recording.stop();
 
-  /*trim silence
+  /*
+  trim silence
   'sox ${uuid}.orig.wav $uuid.wav silence -l 1 0.1 1% -1 2.0 1%'
 
   //convert to mp3
@@ -48,13 +50,14 @@ function stopRecording(uuid) {
   -codec mp3 ${$uuid}.mp3 </dev/null
   */
 
-  //addToLibrary(song, uuid + '.mp3'); 
+  addToLibrary(uuid + '.mp3'); 
 }
 
 function startRecording(_song) {
 
   song = _song;
-  let filename = song.uuid + '.wav';
+  //let filename = song.uuid + '.wav';
+  let filename = song.uuid + '.mp3';
 
   console.log(`Start recording ${filename}`);
 
@@ -63,7 +66,8 @@ function startRecording(_song) {
   recording = recorder.record({
     sampleRate: 44100,
     channels: 2,
-    endOnSilence: true
+    endOnSilence: true,
+    audioType: 'mp3'
   });
   recording.stream().pipe(file);
 
