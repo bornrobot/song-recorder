@@ -1,7 +1,7 @@
-//const cp = require("child_process");
 const recorder = require('node-record-lpcm16');
 const fs = require('fs');
 const request = require('request');
+const { execSync } = require('child_process');
 
 let recording = null;
 let song = null;
@@ -36,12 +36,13 @@ function stopRecording(uuid) {
   console.log(`Stop recording ${uuid}`);
   recording.stop();
 
-  /*
-  trim silence
-  'sox ${uuid}.orig.wav $uuid.wav silence -l 1 0.1 1% -1 2.0 1%'
+  //let cmd = 'pwd';
+  let path = process.cwd();
 
-  //convert to mp3
-  //#prevent strange loop issue by adding </dev/null
+  let cmdConvert = `ffmpeg -hide_banner -y -i ${path}/${uuid}.wav -codec mp3 ${path}/${uuid}.mp3 </dev/null`;
+
+  /*
+  #prevent strange loop issue by adding </dev/null
   ffmpeg -hide_banner -y \
   -i ${uuid}.wav \
   -metadata title="${uuid}" \
@@ -50,14 +51,35 @@ function stopRecording(uuid) {
   -codec mp3 ${$uuid}.mp3 </dev/null
   */
 
-  addToLibrary(uuid + '.mp3'); 
+  const mstrConvert = execSync(cmdConvert, {cwd: path }, function (error, stdout, stderr) {
+    if (error) {
+      console.log(error.stack);
+      console.log('Error code: '+error.code);
+      console.log('Signal received: '+error.signal);
+    }
+    console.log('Child Process STDOUT: '+stdout);
+    console.log('Child Process STDERR: '+stderr);
+  });
+
+  let cmdTrim = `sox ${path}/${uuid}.mp3 ${path}/${uuid}.trimmed.mp3 silence -l 1 0.1 1% -1 2.0 1%`;
+
+  const mstrTrim = execSync(cmdTrim, {cwd: path }, function (error, stdout, stderr) {
+    if (error) {
+      console.log(error.stack);
+      console.log('Error code: '+error.code);
+      console.log('Signal received: '+error.signal);
+    }
+    console.log('Child Process STDOUT: '+stdout);
+    console.log('Child Process STDERR: '+stderr);
+  });
+
+  addToLibrary(uuid + '.trimmed.mp3'); 
 }
 
 function startRecording(_song) {
 
   song = _song;
-  //let filename = song.uuid + '.wav';
-  let filename = song.uuid + '.mp3';
+  let filename = song.uuid + '.wav';
 
   console.log(`Start recording ${filename}`);
 
@@ -67,7 +89,7 @@ function startRecording(_song) {
     sampleRate: 44100,
     channels: 2,
     endOnSilence: true,
-    audioType: 'mp3'
+    audioType: 'wav'
   });
   recording.stream().pipe(file);
 
