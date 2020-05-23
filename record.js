@@ -14,9 +14,7 @@ module.exports = {
 function addToLibrary(audioFilename) {
   console.log(`Save ${audioFilename} to lib`);
 
-  //var url = "https://library.bornrobot.com/add";
-  var url = "http://localhost:5000/add";
-
+  var url = "http://library.bornrobot.com:5000/add";
 
   let req = request.post(url, function (err, resp, body) {
     if (err) {
@@ -32,26 +30,42 @@ function addToLibrary(audioFilename) {
   form.append("mp3", fs.createReadStream(audioFilename));
 }
 
-function stopRecording(uuid) {
-  console.log(`Stop recording ${uuid}`);
-  recording.stop();
-
-  //let cmd = 'pwd';
+function trimSilence(uuid) {
   let path = process.cwd();
 
-  let cmdConvert = `ffmpeg -hide_banner -y -i ${path}/${uuid}.wav -codec mp3 ${path}/${uuid}.mp3 </dev/null`;
+  console.log(`Trimming ${uuid} ...`);
+
+  let cmd = `sox ${path}/${uuid}.wav ${path}/${uuid}.trimmed.wav silence 1 1 1% reverse silence 1 1 1% reverse`;
+
+  const mstr = execSync(cmd, {cwd: path }, function (error, stdout, stderr) {
+    if (error) {
+      console.log(error.stack);
+      console.log('Error code: '+error.code);
+      console.log('Signal received: '+error.signal);
+    }
+    console.log('Child Process STDOUT: '+stdout);
+    console.log('Child Process STDERR: '+stderr);
+  });
+}
+
+function transcodeToMp3(uuid) {
+  console.log(`Transcoding ${uuid} to mp3 ...`);
+
+  let path = process.cwd();
+
+  let cmd = `ffmpeg -hide_banner -y -i ${path}/${uuid}.trimmed.wav -codec mp3 ${path}/${uuid}.mp3 </dev/null`;
 
   /*
   #prevent strange loop issue by adding </dev/null
   ffmpeg -hide_banner -y \
-  -i ${uuid}.wav \
+  -i ${uuid}.trimmed.wav \
   -metadata title="${uuid}" \
   -metadata year="2020" \
   -metadata author="Bornrobot" \
   -codec mp3 ${$uuid}.mp3 </dev/null
   */
 
-  const mstrConvert = execSync(cmdConvert, {cwd: path }, function (error, stdout, stderr) {
+  const mstr = execSync(cmd, {cwd: path }, function (error, stdout, stderr) {
     if (error) {
       console.log(error.stack);
       console.log('Error code: '+error.code);
@@ -60,20 +74,17 @@ function stopRecording(uuid) {
     console.log('Child Process STDOUT: '+stdout);
     console.log('Child Process STDERR: '+stderr);
   });
+}
 
-  let cmdTrim = `sox ${path}/${uuid}.mp3 ${path}/${uuid}.trimmed.mp3 silence -l 1 0.1 1% -1 2.0 1%`;
+function stopRecording(uuid) {
+  console.log(`Stop recording ${uuid}`);
+  recording.stop();
 
-  const mstrTrim = execSync(cmdTrim, {cwd: path }, function (error, stdout, stderr) {
-    if (error) {
-      console.log(error.stack);
-      console.log('Error code: '+error.code);
-      console.log('Signal received: '+error.signal);
-    }
-    console.log('Child Process STDOUT: '+stdout);
-    console.log('Child Process STDERR: '+stderr);
-  });
+  trimSilence(uuid);
 
-  addToLibrary(uuid + '.trimmed.mp3'); 
+  transcodeToMp3(uuid);
+
+  addToLibrary(uuid + '.mp3');
 }
 
 function startRecording(_song) {
@@ -88,7 +99,7 @@ function startRecording(_song) {
   recording = recorder.record({
     sampleRate: 44100,
     channels: 2,
-    endOnSilence: true,
+    endOnSilence: false,
     audioType: 'wav'
   });
   recording.stream().pipe(file);
